@@ -1,13 +1,13 @@
 #define HALL_PIN 2
 
 const int cadenceInterval = 3000; 
-const int printInterval = 1000; 
-const int numReadings = 3; 
-unsigned long previousTime1 = 0;
-unsigned long previousTime2 = 0;
+const int updateInterval = 1000; 
+const int numCadenceReadings = 3; 
+unsigned long previousCadenceTime = 0;
+unsigned long previousUpdateTime = 0;
 int pedalRevolutions = 0;
 float cadence = 0.0;
-float cadenceReadings[numReadings] = {0.0}; // Initialize with zeros
+float cadenceReadings[numCadenceReadings] = {0.0}; 
 int cadenceIndex = 0; 
 
 void setup() {
@@ -21,33 +21,33 @@ void loop() {
   int sensorState = digitalRead(HALL_PIN);
   
   //measure cadence and put in stack
-  if (currentTime - previousTime1 >= cadenceInterval) {
+  if (currentTime - previousCadenceTime >= cadenceInterval) {
     
     cadence = ((float)pedalRevolutions * 60000.0) / ((float)cadenceInterval);
     //Serial.print(cadence);
     
     cadenceReadings[cadenceIndex] = cadence;
-    cadenceIndex = (cadenceIndex + 1) % numReadings;
+    cadenceIndex = (cadenceIndex + 1) % numCadenceReadings;
 
     // Reset
     pedalRevolutions = 0;
-    previousTime1 = currentTime;
+    previousCadenceTime = currentTime;
   }
 
-  //print cadence
-  if (currentTime - previousTime2 >= printInterval) {
+  //update cadence
+  if (currentTime - previousUpdateTime >= updateInterval) {
     
     float avgCadence = 0.0;
-    for (int i = 0; i < numReadings; ++i) {
+    for (int i = 0; i < numCadenceReadings; ++i) {
       avgCadence += cadenceReadings[i];
     }
-    avgCadence /= numReadings;
+    avgCadence /= numCadenceReadings;
 
     Serial.print("Current Cadence: ");
     Serial.print(avgCadence);
     Serial.println(" RPM");
     
-    previousTime2 = currentTime;
+    previousUpdateTime = currentTime;
   }
 }
 
