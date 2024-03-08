@@ -1,0 +1,112 @@
+#define CADENCE_PIN 2
+#define SPEED_PIN 3
+//cm
+#define WHEEL_CIRCUMFERENCE 30 
+
+const int updateInterval = 3000;
+unsigned long previousUpdateTime = 0;
+
+//cadence variables
+const int cadenceInterval = 3000; 
+const int numCadenceReadings = 3; 
+unsigned long previousCadenceTime = 0;
+int pedalRevolutions = 0;
+float cadence = 0.0;
+float cadenceReadings[numCadenceReadings] = {0.0}; 
+int cadenceIndex = 0; 
+
+//speed variables
+const int speedInterval = 3000; 
+const int numSpeedReadings = 3; 
+unsigned long previousSpeedTime = 0;
+int wheelRevolutions = 0;
+float speed = 0.0;
+float speedReadings[numSpeedReadings] = {0.0}; 
+int speedIndex = 0; 
+
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(CADENCE_PIN, INPUT);
+  attachInterrupt(digitalPinToInterrupt(CADENCE_PIN), cadenceSensorISR, RISING);
+  
+  pinMode(SPEED_PIN, INPUT);
+  attachInterrupt(digitalPinToInterrupt(SPEED_PIN), speedSensorISR, RISING);
+}
+
+void loop() {
+  unsigned long currentTime = millis();
+
+  measureCadence(currentTime);
+  measureSpeed(currentTime);
+  
+  updateValues(currentTime);
+
+}
+
+void measureCadence(unsigned long currentTime) {
+  if (currentTime - previousCadenceTime >= cadenceInterval) {
+    
+    cadence = (pedalRevolutions * 60000.0) / (cadenceInterval);
+    //Serial.print(cadence);
+    pedalRevolutions = 0;
+    
+    //place in stack
+    cadenceReadings[cadenceIndex] = cadence;
+    cadenceIndex = (cadenceIndex + 1) % numCadenceReadings;
+    
+    previousCadenceTime = currentTime;
+  }
+}
+
+void measureSpeed(unsigned long currentTime) {
+  if (currentTime - previousSpeedTime >= speedInterval) {
+    
+    speed = (WHEEL_CIRCUMFERENCE * wheelRevolutions) / (speedInterval / 1000.0);
+    speed = speed * 0.036; //convert to km/h
+    //Serial.println(speed);
+    wheelRevolutions = 0;
+    
+    //place in stack
+    speedReadings[speedIndex] = speed;
+    speedIndex = (speedIndex + 1) % numSpeedReadings;
+    
+    previousSpeedTime = currentTime;
+  }
+}
+
+void updateValues(unsigned long currentTime) {
+  if (currentTime - previousUpdateTime >= updateInterval) {
+    
+    float avgCadence = 0.0;
+    for (int i = 0; i < numCadenceReadings; ++i) {
+      avgCadence += cadenceReadings[i];
+    }
+    avgCadence /= numCadenceReadings;
+    
+    float avgSpeed = 0.0;
+    for (int i = 0; i < numSpeedReadings; ++i) {
+      avgSpeed += speedReadings[i];
+    }
+    avgSpeed /= numSpeedReadings;
+
+
+    Serial.print("Current Cadence: ");
+    Serial.print(avgCadence);
+    Serial.println(" RPM");
+    
+    Serial.print("Current Speed: ");
+    Serial.print(avgSpeed);
+    Serial.println(" km/h");
+    
+    previousUpdateTime = currentTime;
+  }
+}
+
+void cadenceSensorISR() {
+  pedalRevolutions++;
+}
+
+void speedSensorISR() {
+  wheelRevolutions++;
+}
