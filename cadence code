@@ -1,0 +1,56 @@
+#define HALL_PIN 2
+
+const int cadenceInterval = 3000; 
+const int printInterval = 1000; 
+const int numReadings = 3; 
+unsigned long previousTime1 = 0;
+unsigned long previousTime2 = 0;
+int pedalRevolutions = 0;
+float cadence = 0.0;
+float cadenceReadings[numReadings] = {0.0}; // Initialize with zeros
+int cadenceIndex = 0; 
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(HALL_PIN, INPUT);
+  attachInterrupt(digitalPinToInterrupt(HALL_PIN), hallSensorISR, RISING);
+}
+
+void loop() {
+  unsigned long currentTime = millis();
+  int sensorState = digitalRead(HALL_PIN);
+  
+  //measure cadence and put in stack
+  if (currentTime - previousTime1 >= cadenceInterval) {
+    
+    cadence = ((float)pedalRevolutions * 60000.0) / ((float)cadenceInterval);
+    //Serial.print(cadence);
+    
+    cadenceReadings[cadenceIndex] = cadence;
+    cadenceIndex = (cadenceIndex + 1) % numReadings;
+
+    // Reset
+    pedalRevolutions = 0;
+    previousTime1 = currentTime;
+  }
+
+  //print cadence
+  if (currentTime - previousTime2 >= printInterval) {
+    
+    float avgCadence = 0.0;
+    for (int i = 0; i < numReadings; ++i) {
+      avgCadence += cadenceReadings[i];
+    }
+    avgCadence /= numReadings;
+
+    Serial.print("Current Cadence: ");
+    Serial.print(avgCadence);
+    Serial.println(" RPM");
+    
+    previousTime2 = currentTime;
+  }
+}
+
+void hallSensorISR() {
+  pedalRevolutions++;
+}
