@@ -36,15 +36,17 @@ void setup() {
 
 void loop() {
   unsigned long currentTime = millis();
+  float cadenceResult;
+  float speedResult;
 
-  measureCadence(currentTime);
-  measureSpeed(currentTime);
+  cadenceResult = measureCadence(currentTime);
+  speedResult = measureSpeed(currentTime);
   
-  updateValues(currentTime);
+  updateValues(currentTime, cadenceResult, speedResult);
 
 }
 
-void measureCadence(unsigned long currentTime) {
+float measureCadence(unsigned long currentTime) {
   if (currentTime - previousCadenceTime >= cadenceInterval) {
     
     cadence = (pedalRevolutions * 60000.0) / (cadenceInterval);
@@ -57,9 +59,17 @@ void measureCadence(unsigned long currentTime) {
     
     previousCadenceTime = currentTime;
   }
+  
+  float avgCadence = 0.0;
+  for (int i = 0; i < numCadenceReadings; ++i) {
+    avgCadence += cadenceReadings[i];
+  }
+  avgCadence /= numCadenceReadings;
+  
+  return avgCadence; 
 }
 
-void measureSpeed(unsigned long currentTime) {
+float measureSpeed(unsigned long currentTime) {
   if (currentTime - previousSpeedTime >= speedInterval) {
     
     speed = (WHEEL_CIRCUMFERENCE * wheelRevolutions) / (speedInterval / 1000.0);
@@ -73,30 +83,26 @@ void measureSpeed(unsigned long currentTime) {
     
     previousSpeedTime = currentTime;
   }
+  
+  float avgSpeed = 0.0;
+  for (int i = 0; i < numSpeedReadings; ++i) {
+    avgSpeed += speedReadings[i];
+  }
+  avgSpeed /= numSpeedReadings;
+  
+  return avgSpeed;
+  
 }
 
-void updateValues(unsigned long currentTime) {
+void updateValues(unsigned long currentTime, float cadenceResult, float speedResult) {
   if (currentTime - previousUpdateTime >= updateInterval) {
-    
-    float avgCadence = 0.0;
-    for (int i = 0; i < numCadenceReadings; ++i) {
-      avgCadence += cadenceReadings[i];
-    }
-    avgCadence /= numCadenceReadings;
-    
-    float avgSpeed = 0.0;
-    for (int i = 0; i < numSpeedReadings; ++i) {
-      avgSpeed += speedReadings[i];
-    }
-    avgSpeed /= numSpeedReadings;
-
 
     Serial.print("Current Cadence: ");
-    Serial.print(avgCadence);
+    Serial.print(cadenceResult);
     Serial.println(" RPM");
     
     Serial.print("Current Speed: ");
-    Serial.print(avgSpeed);
+    Serial.print(speedResult);
     Serial.println(" km/h");
     
     previousUpdateTime = currentTime;
