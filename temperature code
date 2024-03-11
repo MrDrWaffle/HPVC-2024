@@ -2,7 +2,9 @@
 #include <LiquidCrystal_I2C.h>
 
 #define TEMP_SENSOR_ADDRESS 0x01  
-#define LCD_ADDRESS 0x02         
+#define LCD_ADDRESS 0x02      
+
+#define OUTPUT_PIN 13 
 
 #define LCD_COL 16
 #define LCD_ROW 2
@@ -13,6 +15,7 @@ void setup() {
   Serial.begin(9600);
   lcd.begin(16, 2);
   Wire.begin();
+  pinMode(OUTPUT_PIN, OUTPUT);
 }
 
 void loop() {
@@ -24,6 +27,13 @@ void loop() {
   lcd.setCursor(0, 1);
   lcd.print(temperature, 0);
   lcd.print("C");
+  
+  if (temperature > 60.0) {
+    digitalWrite(OUTPUT_PIN, HIGH);
+  } else {
+    digitalWrite(OUTPUT_PIN, LOW);
+  }
+
 }
 
 float readTemperature() {
