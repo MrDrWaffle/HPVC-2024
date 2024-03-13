@@ -1,3 +1,5 @@
+#include <LiquidCrystal_I2C.h>
+
 #define CADENCE_PIN 2
 #define SPEED_PIN 3
 //cm
@@ -23,10 +25,22 @@ int wheelRevolutions = 0;
 float speed = 0.0;
 float speedReadings[numSpeedReadings] = {0.0}; 
 int speedIndex = 0; 
+//Define lcd obj
+LiquidCrystal_I2C lcd(0x20, 16, 2); // I2C address 0x27, 16 column and 2 rows
 
 
 void setup() {
   Serial.begin(9600);
+  
+  lcd.init(); //initialize the lcd
+  lcd.backlight(); //open the backlight 
+  
+  lcd.setCursor(0, 0);
+  lcd.print("INITIALIZING");
+  delay(1000);
+  lcd.clear();
+
+  
   pinMode(CADENCE_PIN, INPUT);
   attachInterrupt(digitalPinToInterrupt(CADENCE_PIN), cadenceSensorISR, RISING);
   
@@ -38,10 +52,12 @@ void loop() {
   unsigned long currentTime = millis();
   float cadenceResult;
   float speedResult;
-
+	
   cadenceResult = measureCadence(currentTime);
   speedResult = measureSpeed(currentTime);
   
+
+
   updateValues(currentTime, cadenceResult, speedResult);
 
 }
@@ -104,6 +120,13 @@ void updateValues(unsigned long currentTime, float cadenceResult, float speedRes
     Serial.print("Current Speed: ");
     Serial.print(speedResult);
     Serial.println(" km/h");
+    
+    lcd.clear();
+    lcd.setCursor(0, 0);
+  	lcd.print("Cadence: " + String(cadenceResult, 2) + " RPM");
+    lcd.setCursor(0, 1);
+    lcd.print("Speed: " + String(speedResult, 2) + " km/h");
+
     
     previousUpdateTime = currentTime;
   }
